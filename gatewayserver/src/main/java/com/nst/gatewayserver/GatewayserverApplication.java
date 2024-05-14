@@ -47,28 +47,6 @@ public class GatewayserverApplication {
 							.path("/nstbank/cards/**")
 							.filters( f -> f.rewritePath("/nstbank/cards/(?<segment>.*)","/${segment}")
 									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
-									.requestRateLimiter(config -> config.setRateLimiter(redisRateLimiter())
-											.setKeyResolver(userKeyResolver())))
-							.uri("lb://CARDS")).build();
+									).uri("lb://CARDS")).build();
 	}
-
-	@Bean
-	public Customizer<ReactiveResilience4JCircuitBreakerFactory> defaultCustomizer() {
-		return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
-				.circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
-				.timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(10))
-						.build()).build());
-	}
-
-	@Bean
-	public RedisRateLimiter redisRateLimiter() {
-		return new RedisRateLimiter(1, 1, 1);
-	}
-
-	@Bean
-	KeyResolver userKeyResolver() {
-		return exchange -> Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("user"))
-				.defaultIfEmpty("anonymous");
-	}
-
 }
